@@ -123,6 +123,13 @@ static Janet cfun_EndBlendMode(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
 }
 
+static Janet cfun_IsShaderValid(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    Shader *shader = jaylib_getshader(argv, 0);
+    bool result = IsShaderValid(*shader);
+    return janet_wrap_boolean(result);
+}
+
 static JanetReg shader_cfuns[] = {
     {"load-shader", cfun_LoadShader,
         "(loader-shader vertex-shader fragment-shader)\n\n"
@@ -155,6 +162,10 @@ static JanetReg shader_cfuns[] = {
     {"end-blend-mode", cfun_EndBlendMode,
         "(end-blend-mode)\n\n"
         "End blending mode (reset to default: alpha blending)"
+    },
+    {"shader-valid?", cfun_IsShaderValid,
+        "(shader-valid? shader)\n\n"
+        "Check if shader is valid (loaded on GPU)"
     },
     {NULL, NULL, NULL}
 };

@@ -353,10 +353,10 @@ static Janet cfun_LoadMaterialDefault(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(defaultMaterial);
 }
 
-static Janet cfun_IsMaterialReady(int32_t argc, Janet *argv) {
+static Janet cfun_IsMaterialValid(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     Material material = *jaylib_getmaterial(argv, 0);
-    if (IsMaterialReady(material)) {
+    if (IsMaterialValid(material)) {
         return janet_wrap_true();
     } else {
         return janet_wrap_false();
@@ -396,10 +396,10 @@ static Janet cfun_LoadModel(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(model);
 }
 
-static Janet cfun_IsModelReady(int32_t argc, Janet *argv) {
+static Janet cfun_IsModelValid(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     Model model = *jaylib_getmodel(argv, 0);
-    if (IsModelReady(model)) {
+    if (IsModelValid(model)) {
         return janet_wrap_true();
     } else {
         return janet_wrap_false();
@@ -436,6 +436,14 @@ static Janet cfun_ExportMesh(int32_t argc, Janet *argv) {
     Mesh *mesh = jaylib_getmesh(argv, 0);
     const char *fileName = janet_getcstring(argv, 1);
     bool success = ExportMesh(*mesh, fileName);
+    return janet_wrap_boolean(success);
+}
+
+static Janet cfun_ExportMeshAsCode(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Mesh *mesh = jaylib_getmesh(argv, 0);
+    const char *fileName = janet_getcstring(argv, 1);
+    bool success = ExportMeshAsCode(*mesh, fileName);
     return janet_wrap_boolean(success);
 }
 
@@ -481,10 +489,15 @@ static Janet cfun_UpdateModelAnimation(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
 }
 
-static Janet cfun_UnloadModelAnimation(int32_t argc, Janet *argv) {
-    janet_fixarity(argc, 1);
-    ModelAnimation *anim = jaylib_getmodelanimation(argv, 0);
-    UnloadModelAnimation(*anim);
+static Janet cfun_UpdateModelAnimationEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 6);
+    Model *model = jaylib_getmodel(argv, 0);
+    ModelAnimation *animA = jaylib_getmodelanimation(argv, 1);
+    float frameA = (float) janet_getnumber(argv, 2);
+    ModelAnimation *animB = jaylib_getmodelanimation(argv, 3);
+    float frameB = (float) janet_getnumber(argv, 4);
+    float blend = (float) janet_getnumber(argv, 5);
+    UpdateModelAnimationEx(*model, *animA, frameA, *animB, frameB, blend);
     return janet_wrap_nil();
 }
 
@@ -797,9 +810,9 @@ static JanetReg threed_cfuns[] = {
         "(load-material-default)\n\n"
         "Load and return the default material"    
     },
-    {"material-ready?", cfun_IsMaterialReady,
-        "(material-ready? material)\n\n"
-        "Checks if a material is ready"
+    {"material-valid?", cfun_IsMaterialValid,
+        "(material-valid? material)\n\n"
+        "Checks if a material is valid"
     },
     {"unload-material", cfun_UnloadMaterial,
         "(unload-material material)\n\n"
@@ -861,9 +874,9 @@ static JanetReg threed_cfuns[] = {
         "(load-model filename)\n\n"
         "Load model from files (meshes and materials)"    
     },
-    {"model-ready?", cfun_IsModelReady,
-        "(model-ready? model)\n\n"
-        "Checks if a model is ready"
+    {"model-valid?", cfun_IsModelValid,
+        "(model-valid? model)\n\n"
+        "Checks if a model is valid"
     },
     {"load-model-from-mesh", cfun_LoadModelFromMesh,
         "(load-model-from-mesh mesh)\n\n"
@@ -881,6 +894,10 @@ static JanetReg threed_cfuns[] = {
         "(export-mesh mesh filename)\n\n"
         "Export mesh data to file, returns true on success"    
     },
+    {"export-mesh-as-code", cfun_ExportMeshAsCode,
+        "(export-mesh-as-code mesh file-name)\n\n"
+        "Export mesh as code file (.h), returns true on success"    
+    },
     {"upload-mesh", cfun_UploadMesh,
         "(upload-mesh mesh dynamic)\n\n"
         "Upload mesh vertex data in GPU and provide VAO/VBO ids"    
@@ -897,9 +914,9 @@ static JanetReg threed_cfuns[] = {
         "(update-model-animation model anim frame)\n\n"
         "Update model animation pose"    
     },
-    {"unload-model-animation", cfun_UnloadModelAnimation,
-        "(unload-model-animation anim)\n\n"
-        "Unload animation data"    
+    {"update-model-animation-ex", cfun_UpdateModelAnimationEx,
+        "(update-model-animation-ex model anim-a frame-a anim-b frame-b blend)\n\n"
+        "Update model animation pose, blending two animations"    
     },
     {"unload-model-animations", cfun_UnloadModelAnimations,
         "(unload-model-animations anims)\n\n"

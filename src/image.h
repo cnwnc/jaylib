@@ -40,10 +40,10 @@ static Janet cfun_GetBitmapHeaderBuffer(int32_t argc, Janet *argv) {
     return janet_wrap_buffer(data);
 }
 
-static Janet cfun_IsImageReady(int32_t argc, Janet *argv) {
+static Janet cfun_IsImageValid(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     Image image = *jaylib_getimage(argv, 0);
-    if (IsImageReady(image)) {
+    if (IsImageValid(image)) {
         return janet_wrap_true();
     } else {
         return janet_wrap_false();
@@ -81,10 +81,10 @@ static Janet cfun_LoadTexture(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(texture);
 }
 
-static Janet cfun_IsTextureReady(int32_t argc, Janet *argv) {
+static Janet cfun_IsTextureValid(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     Texture2D texture = *jaylib_gettexture2d(argv, 0);
-    if (IsTextureReady(texture)) {
+    if (IsTextureValid(texture)) {
         return janet_wrap_true();
     } else {
         return janet_wrap_false();
@@ -114,8 +114,6 @@ static Janet cfun_LoadTextureCubemap(int32_t argc, Janet *argv) {
         layoutType = CUBEMAP_LAYOUT_CROSS_THREE_BY_FOUR;
     } else if (!janet_cstrcmp(kw,  "4x3")) {
         layoutType = CUBEMAP_LAYOUT_CROSS_FOUR_BY_THREE;
-    } else if (!janet_cstrcmp(kw, "panorama")) {
-        layoutType = CUBEMAP_LAYOUT_PANORAMA;
     } else {
         janet_panicf("unknown layout type %v", argv[1]);
     }
@@ -133,10 +131,10 @@ static Janet cfun_LoadRenderTexture(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(texture);
 }
 
-static Janet cfun_IsRenderTextureReady(int32_t argc, Janet *argv) {
+static Janet cfun_IsRenderTextureValid(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     RenderTexture texture = *jaylib_getrendertexture(argv, 0);
-    if (IsRenderTextureReady(texture)) {
+    if (IsRenderTextureValid(texture)) {
         return janet_wrap_true();
     } else {
         return janet_wrap_false();
@@ -350,17 +348,6 @@ static Janet cfun_ImageTextEx(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(image);
 }
 
-static Janet cfun_ImageDraw(int32_t argc, Janet *argv) {
-    janet_fixarity(argc, 5);
-    Image *dst = jaylib_getimage(argv, 0);
-    Image *src = jaylib_getimage(argv, 1);
-    Rectangle srcRect = jaylib_getrect(argv, 2);
-    Rectangle destRect = jaylib_getrect(argv, 3);
-    Color tint = jaylib_getcolor(argv, 4);
-    ImageDraw(dst, *src, srcRect, destRect, tint);
-    return argv[0];
-}
-
 static Janet cfun_ImageDrawRectangleRec(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 3);
     Image *dst = jaylib_getimage(argv, 0);
@@ -370,13 +357,13 @@ static Janet cfun_ImageDrawRectangleRec(int32_t argc, Janet *argv) {
     return argv[0];
 }
 
-static Janet cfun_ImageDrawRectangleLines(int32_t argc, Janet *argv) {
+static Janet cfun_ImageDrawRectangleLinesEx(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 4);
     Image *dst = jaylib_getimage(argv, 0);
     Rectangle rec = jaylib_getrect(argv, 1);
     int thick = janet_getinteger(argv, 2);
     Color color = jaylib_getcolor(argv, 3);
-    ImageDrawRectangleLines(dst, rec, thick, color);
+    ImageDrawRectangleLinesEx(dst, rec, thick, color);
     return argv[0];
 }
 
@@ -695,6 +682,266 @@ static Janet cfun_LoadImageFromMemory(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(image);
 }
 
+static Janet cfun_ColorIsEqual(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Color col1 = jaylib_getcolor(argv, 0);
+    Color col2 = jaylib_getcolor(argv, 1);
+    return janet_wrap_boolean(ColorIsEqual(col1, col2));
+}
+
+static Janet cfun_ColorLerp(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    Color color1 = jaylib_getcolor(argv, 0);
+    Color color2 = jaylib_getcolor(argv, 1);
+    float factor = (float) janet_getnumber(argv, 2);
+    Color result = ColorLerp(color1, color2, factor);
+    Janet *tup = janet_tuple_begin(4);
+    tup[0] = janet_wrap_integer(result.r);
+    tup[1] = janet_wrap_integer(result.g);
+    tup[2] = janet_wrap_integer(result.b);
+    tup[3] = janet_wrap_integer(result.a);
+    return janet_wrap_tuple(janet_tuple_end(tup));
+}
+
+static Janet cfun_LoadRenderTextureEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    int width = janet_getinteger(argv, 0);
+    int height = janet_getinteger(argv, 1);
+    int format = jaylib_getpixelformat(argv, 2);
+    RenderTexture *texture = janet_abstract(&AT_RenderTexture, sizeof(RenderTexture));
+    *texture = LoadRenderTextureEx(width, height, format);
+    return janet_wrap_abstract(texture);
+}
+
+static Janet cfun_ImageFromChannel(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Image image = *jaylib_getimage(argv, 0);
+    int selectedChannel = janet_getinteger(argv, 1);
+    Image *newImage = janet_abstract(&AT_Image, sizeof(Image));
+    *newImage = ImageFromChannel(image, selectedChannel);
+    return janet_wrap_abstract(newImage);
+}
+
+static Janet cfun_ImageKernelConvolution(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Image *image = jaylib_getimage(argv, 0);
+    JanetView kernel = janet_getindexed(argv, 1);
+    float *rawKernel = janet_smalloc(sizeof(float) * kernel.len);
+    for (int32_t i = 0; i < kernel.len; i++) {
+        rawKernel[i] = idx_getfloat(kernel, i);
+    }
+    ImageKernelConvolution(image, rawKernel, (int) kernel.len);
+    janet_sfree(rawKernel);
+    return argv[0];
+}
+
+static Janet cfun_LoadImageAnimFromMemory(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    const char *fileType = janet_getcstring(argv, 0);
+    JanetByteView data = janet_getbytes(argv, 1);
+    int frames = 0;
+    Image *image = janet_abstract(&AT_Image, sizeof(Image));
+    *image = LoadImageAnimFromMemory(fileType, data.bytes, data.len, &frames);
+    Janet ret[2] = { janet_wrap_abstract(image), janet_wrap_integer(frames) };
+    return janet_wrap_tuple(janet_tuple_n(ret, 2));
+}
+
+static Janet cfun_ImageDrawLineEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Image *dst = jaylib_getimage(argv, 0);
+    Vector2 start = jaylib_getvec2(argv, 1);
+    Vector2 end = jaylib_getvec2(argv, 2);
+    int thick = janet_getinteger(argv, 3);
+    Color color = jaylib_getcolor(argv, 4);
+    ImageDrawLineEx(dst, start, end, thick, color);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawLineStrip(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    Image *dst = jaylib_getimage(argv, 0);
+    JanetView points = janet_getindexed(argv, 1);
+    Vector2 *rawPoints = janet_smalloc(sizeof(Vector2) * points.len);
+    for (int32_t i = 0; i < points.len; i++) {
+        rawPoints[i] = jaylib_getvec2(points.items, i);
+    }
+    Color color = jaylib_getcolor(argv, 2);
+    ImageDrawLineStrip(dst, rawPoints, points.len, color);
+    janet_sfree(rawPoints);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawTriangle(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Image *dst = jaylib_getimage(argv, 0);
+    Vector2 v1 = jaylib_getvec2(argv, 1);
+    Vector2 v2 = jaylib_getvec2(argv, 2);
+    Vector2 v3 = jaylib_getvec2(argv, 3);
+    Color color = jaylib_getcolor(argv, 4);
+    ImageDrawTriangle(dst, v1, v2, v3, color);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawTriangleGradient(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 7);
+    Image *dst = jaylib_getimage(argv, 0);
+    Vector2 v1 = jaylib_getvec2(argv, 1);
+    Vector2 v2 = jaylib_getvec2(argv, 2);
+    Vector2 v3 = jaylib_getvec2(argv, 3);
+    Color c1 = jaylib_getcolor(argv, 4);
+    Color c2 = jaylib_getcolor(argv, 5);
+    Color c3 = jaylib_getcolor(argv, 6);
+    ImageDrawTriangleGradient(dst, v1, v2, v3, c1, c2, c3);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawTriangleLines(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Image *dst = jaylib_getimage(argv, 0);
+    Vector2 v1 = jaylib_getvec2(argv, 1);
+    Vector2 v2 = jaylib_getvec2(argv, 2);
+    Vector2 v3 = jaylib_getvec2(argv, 3);
+    Color color = jaylib_getcolor(argv, 4);
+    ImageDrawTriangleLines(dst, v1, v2, v3, color);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawTriangleFan(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    Image *dst = jaylib_getimage(argv, 0);
+    JanetView points = janet_getindexed(argv, 1);
+    Vector2 *rawPoints = janet_smalloc(sizeof(Vector2) * points.len);
+    for (int32_t i = 0; i < points.len; i++) {
+        rawPoints[i] = jaylib_getvec2(points.items, i);
+    }
+    Color color = jaylib_getcolor(argv, 2);
+    ImageDrawTriangleFan(dst, rawPoints, points.len, color);
+    janet_sfree(rawPoints);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawTriangleStrip(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    Image *dst = jaylib_getimage(argv, 0);
+    JanetView points = janet_getindexed(argv, 1);
+    Vector2 *rawPoints = janet_smalloc(sizeof(Vector2) * points.len);
+    for (int32_t i = 0; i < points.len; i++) {
+        rawPoints[i] = jaylib_getvec2(points.items, i);
+    }
+    Color color = jaylib_getcolor(argv, 2);
+    ImageDrawTriangleStrip(dst, rawPoints, points.len, color);
+    janet_sfree(rawPoints);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawRectanglePro(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Image *dst = jaylib_getimage(argv, 0);
+    Rectangle rec = jaylib_getrect(argv, 1);
+    Vector2 origin = jaylib_getvec2(argv, 2);
+    float rotation = (float) janet_getnumber(argv, 3);
+    Color color = jaylib_getcolor(argv, 4);
+    ImageDrawRectanglePro(dst, rec, origin, rotation, color);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawRectangleGradientEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 6);
+    Image *dst = jaylib_getimage(argv, 0);
+    Rectangle rec = jaylib_getrect(argv, 1);
+    Color col1 = jaylib_getcolor(argv, 2);
+    Color col2 = jaylib_getcolor(argv, 3);
+    Color col3 = jaylib_getcolor(argv, 4);
+    Color col4 = jaylib_getcolor(argv, 5);
+    ImageDrawRectangleGradientEx(dst, rec, col1, col2, col3, col4);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawCircleGradient(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Image *dst = jaylib_getimage(argv, 0);
+    Vector2 center = jaylib_getvec2(argv, 1);
+    float radius = (float) janet_getnumber(argv, 2);
+    Color inner = jaylib_getcolor(argv, 3);
+    Color outer = jaylib_getcolor(argv, 4);
+    ImageDrawCircleGradient(dst, center, radius, inner, outer);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawImage(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Image *dst = jaylib_getimage(argv, 0);
+    Image src = *jaylib_getimage(argv, 1);
+    int posX = janet_getinteger(argv, 2);
+    int posY = janet_getinteger(argv, 3);
+    Color tint = jaylib_getcolor(argv, 4);
+    ImageDrawImage(dst, src, posX, posY, tint);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawImageEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 6);
+    Image *dst = jaylib_getimage(argv, 0);
+    Image src = *jaylib_getimage(argv, 1);
+    Vector2 position = jaylib_getvec2(argv, 2);
+    float rotation = (float) janet_getnumber(argv, 3);
+    float scale = (float) janet_getnumber(argv, 4);
+    Color tint = jaylib_getcolor(argv, 5);
+    ImageDrawImageEx(dst, src, position, rotation, scale, tint);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawImageRec(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Image *dst = jaylib_getimage(argv, 0);
+    Image src = *jaylib_getimage(argv, 1);
+    Rectangle srcRec = jaylib_getrect(argv, 2);
+    Vector2 position = jaylib_getvec2(argv, 3);
+    Color tint = jaylib_getcolor(argv, 4);
+    ImageDrawImageRec(dst, src, srcRec, position, tint);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawImagePro(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 7);
+    Image *dst = jaylib_getimage(argv, 0);
+    Image src = *jaylib_getimage(argv, 1);
+    Rectangle srcRec = jaylib_getrect(argv, 2);
+    Rectangle dstRec = jaylib_getrect(argv, 3);
+    Vector2 origin = jaylib_getvec2(argv, 4);
+    float rotation = (float) janet_getnumber(argv, 5);
+    Color tint = jaylib_getcolor(argv, 6);
+    ImageDrawImagePro(dst, src, srcRec, dstRec, origin, rotation, tint);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawTextPro(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 9);
+    Image *dst = jaylib_getimage(argv, 0);
+    Font *font = jaylib_getfont(argv, 1);
+    const char *text = janet_getcstring(argv, 2);
+    Vector2 position = jaylib_getvec2(argv, 3);
+    Vector2 origin = jaylib_getvec2(argv, 4);
+    float rotation = (float) janet_getnumber(argv, 5);
+    float fontSize = (float) janet_getnumber(argv, 6);
+    float spacing = (float) janet_getnumber(argv, 7);
+    Color tint = jaylib_getcolor(argv, 8);
+    ImageDrawTextPro(dst, *font, text, position, origin, rotation, fontSize, spacing, tint);
+    return argv[0];
+}
+
+static Janet cfun_ImageDrawRectangleLines(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 6);
+    Image *dst = jaylib_getimage(argv, 0);
+    int posX = janet_getinteger(argv, 1);
+    int posY = janet_getinteger(argv, 2);
+    int width = janet_getinteger(argv, 3);
+    int height = janet_getinteger(argv, 4);
+    Color color = jaylib_getcolor(argv, 5);
+    ImageDrawRectangleLines(dst, posX, posY, width, height, color);
+    return argv[0];
+}
+
 /*
 // Image/Texture2D data loading/unloading/saving functions
 RLAPI Image LoadImagePro(void *data, int width, int height, int format);                                 // Load image from raw data with parameters
@@ -722,9 +969,9 @@ static const JanetReg image_cfuns[] = {
         "(get-bitmap-header-buffer dimx dimy)\n\n"
         "returns a header for a 24bpp bitmap with dimensions dimx*dimy"
     },
-    {"image-ready?", cfun_IsImageReady,
-        "(image-ready? image)\n\n"
-        "Check if an image is ready"
+    {"image-valid?", cfun_IsImageValid,
+        "(image-valid? image)\n\n"
+        "Check if an image is valid"
     },
     {"export-image", cfun_ExportImage, 
         "(export-image image file-name)\n\n"
@@ -738,9 +985,9 @@ static const JanetReg image_cfuns[] = {
         "(load-texture file-name)\n\n"
         "Load texture from file into GPU memory (VRAM)"
     },
-    {"texture-ready?", cfun_IsTextureReady,
-        "(texture-ready? texture)\n\n"
-        "Check if a texture is ready"
+    {"texture-valid?", cfun_IsTextureValid,
+        "(texture-valid? texture)\n\n"
+        "Check if a texture is valid"
     },
     {"load-texture-from-image", cfun_LoadTextureFromImage,  
         "(load-texture-from-image image)\n\n"
@@ -754,9 +1001,9 @@ static const JanetReg image_cfuns[] = {
         "(load-render-texture width height)\n\n"
         "Load texture for rendering (framebuffer)"
     },
-    {"render-texture-ready?", cfun_IsRenderTextureReady,
-        "(render-texture-ready? texture)\n\n"
-        "Check if a render texture is ready"
+    {"render-texture-valid?", cfun_IsRenderTextureValid,
+        "(render-texture-valid? texture)\n\n"
+        "Check if a render texture is valid"
     },
     {"unload-image", cfun_UnloadImage, 
         "(unload-image image)\n\n"
@@ -858,16 +1105,12 @@ static const JanetReg image_cfuns[] = {
         "(image-text-ex font text font-size spacing tint)\n\n"
         "Create an image from text (custom sprite font)"
     },
-    {"image-draw", cfun_ImageDraw, 
-        "(image-draw dst src src-rec dst-rec tint)\n\n"
-        "Draw a source image within a destination image (tint applied to source)"
-    },
     {"image-draw-rectangle-rec", cfun_ImageDrawRectangleRec, 
         "(image-draw-rectangle-rec dst rec color)\n\n"
         "Draw rectangle within an image"
     },
-    {"image-draw-rectangle-lines", cfun_ImageDrawRectangleLines, 
-        "(image-draw-rectangle-lines dst rec thick color)\n\n"
+    {"image-draw-rectangle-lines-ex", cfun_ImageDrawRectangleLinesEx, 
+        "(image-draw-rectangle-lines-ex dst rec thick color)\n\n"
         "Draw rectangle lines within an image"
     },
     {"image-draw-text", cfun_ImageDrawText, 
@@ -985,6 +1228,94 @@ static const JanetReg image_cfuns[] = {
     {"load-image-from-memory", cfun_LoadImageFromMemory,
         "(load-image-from-memory filetype data size)\n\n"
         "Load image from memory buffer, fileType refers to extension: i.e. '.png'"
+    },
+    {"color-equal?", cfun_ColorIsEqual,
+        "(color-equal? color1 color2)\n\n"
+        "Check if two colors are equal"
+    },
+    {"color-lerp", cfun_ColorLerp,
+        "(color-lerp color1 color2 factor)\n\n"
+        "Get color lerp interpolation between two colors, factor [0.0..1.0], returns [r g b a]"
+    },
+    {"load-render-texture-ex", cfun_LoadRenderTextureEx,
+        "(load-render-texture-ex width height format)\n\n"
+        "Load texture for rendering (framebuffer) with specific pixel format"
+    },
+    {"image-from-channel", cfun_ImageFromChannel,
+        "(image-from-channel image selected-channel)\n\n"
+        "Create an image from a selected channel of another image (GRAYSCALE)"
+    },
+    {"image-kernel-convolution", cfun_ImageKernelConvolution,
+        "(image-kernel-convolution image kernel)\n\n"
+        "Apply custom square convolution kernel to image, kernel is a flat list of kernelSize*kernelSize numbers"
+    },
+    {"load-image-anim-from-memory", cfun_LoadImageAnimFromMemory,
+        "(load-image-anim-from-memory file-type data)\n\n"
+        "Load image sequence from memory buffer, fileType refers to extension: i.e. '.png', returns [image frames]"
+    },
+    {"image-draw-line-ex", cfun_ImageDrawLineEx,
+        "(image-draw-line-ex dst [start-x start-y] [end-x end-y] thick color)\n\n"
+        "Draw a line defining thickness within an image"
+    },
+    {"image-draw-line-strip", cfun_ImageDrawLineStrip,
+        "(image-draw-line-strip dst points color)\n\n"
+        "Draw a lines sequence within an image, points is a list of Vector2"
+    },
+    {"image-draw-triangle", cfun_ImageDrawTriangle,
+        "(image-draw-triangle dst v1 v2 v3 color)\n\n"
+        "Draw triangle within an image"
+    },
+    {"image-draw-triangle-gradient", cfun_ImageDrawTriangleGradient,
+        "(image-draw-triangle-gradient dst v1 v2 v3 c1 c2 c3)\n\n"
+        "Draw triangle with interpolated colors within an image"
+    },
+    {"image-draw-triangle-lines", cfun_ImageDrawTriangleLines,
+        "(image-draw-triangle-lines dst v1 v2 v3 color)\n\n"
+        "Draw triangle outline within an image"
+    },
+    {"image-draw-triangle-fan", cfun_ImageDrawTriangleFan,
+        "(image-draw-triangle-fan dst points color)\n\n"
+        "Draw a triangle fan defined by points within an image (first vertex is the center)"
+    },
+    {"image-draw-triangle-strip", cfun_ImageDrawTriangleStrip,
+        "(image-draw-triangle-strip dst points color)\n\n"
+        "Draw a triangle strip defined by points within an image"
+    },
+    {"image-draw-rectangle-pro", cfun_ImageDrawRectanglePro,
+        "(image-draw-rectangle-pro dst rec [origin-x origin-y] rotation color)\n\n"
+        "Draw a color-filled rectangle with pro parameters within an image"
+    },
+    {"image-draw-rectangle-gradient-ex", cfun_ImageDrawRectangleGradientEx,
+        "(image-draw-rectangle-gradient-ex dst rec col1 col2 col3 col4)\n\n"
+        "Draw rectangle with gradient colors within an image, counter-clockwise color order"
+    },
+    {"image-draw-circle-gradient", cfun_ImageDrawCircleGradient,
+        "(image-draw-circle-gradient dst [center-x center-y] radius inner outer)\n\n"
+        "Draw a gradient-filled circle within an image"
+    },
+    {"image-draw-image", cfun_ImageDrawImage,
+        "(image-draw-image dst src pos-x pos-y tint)\n\n"
+        "Draw an image within an image"
+    },
+    {"image-draw-image-ex", cfun_ImageDrawImageEx,
+        "(image-draw-image-ex dst src [pos-x pos-y] rotation scale tint)\n\n"
+        "Draw an image with scaling and rotation within an image"
+    },
+    {"image-draw-image-rec", cfun_ImageDrawImageRec,
+        "(image-draw-image-rec dst src src-rec [pos-x pos-y] tint)\n\n"
+        "Draw a part of an image defined by a rectangle within an image"
+    },
+    {"image-draw-image-pro", cfun_ImageDrawImagePro,
+        "(image-draw-image-pro dst src src-rec dst-rec origin rotation tint)\n\n"
+        "Draw a part of an image defined by a rectangle into destination rectangle, with scaling and rotation, within an image"
+    },
+    {"image-draw-text-pro", cfun_ImageDrawTextPro,
+        "(image-draw-text-pro dst font text [pos-x pos-y] [origin-x origin-y] rotation font-size spacing tint)\n\n"
+        "Draw text using Font and pro parameters (rotation) within an image"
+    },
+    {"image-draw-rectangle-lines", cfun_ImageDrawRectangleLines,
+        "(image-draw-rectangle-lines dst pos-x pos-y width height color)\n\n"
+        "Draw rectangle lines within an image"
     },
     {NULL, NULL, NULL}
 };

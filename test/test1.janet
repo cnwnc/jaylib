@@ -17,7 +17,7 @@
 
   (clear-background :ray-white)
   (let [[x y] (get-mouse-position)]
-    (draw-circle-gradient x y 31.4 :lime :red)
+    (draw-circle-gradient [x y] 31.4 :lime :red)
     (draw-poly [500 200] 5 40 rot :magenta)
     (draw-line-bezier
       [(- x 100) y]

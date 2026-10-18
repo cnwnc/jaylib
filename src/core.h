@@ -1,4 +1,11 @@
 #include "raylib.h"
+static Janet jaylib_wrap_ray(Ray r) {
+    Janet *tup = janet_tuple_begin(2);
+    tup[0] = jaylib_wrap_vec3(r.position);
+    tup[1] = jaylib_wrap_vec3(r.direction);
+    return janet_wrap_tuple(janet_tuple_end(tup));
+}
+
 static Janet cfun_InitWindow(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 3);
     int32_t width = janet_getinteger(argv, 0);
@@ -313,6 +320,14 @@ static Janet cfun_SetClipboardText(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
 }
 
+static Janet cfun_GetClipboardImage(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    Image *image = janet_abstract(&AT_Image, sizeof(Image));
+    *image = GetClipboardImage();
+    return janet_wrap_abstract(image);
+}
+
 static Janet cfun_EnableEventWaiting(int32_t argc, Janet *argv) {
     (void) argv;
     janet_fixarity(argc, 0);
@@ -447,6 +462,22 @@ static Janet cfun_GetCameraMatrix2D(int32_t argc, Janet *argv) {
     Camera2D cam = *jaylib_getcamera2d(argv, 0);
     Matrix matrix = GetCameraMatrix2D(cam);
     return jaylib_wrap_matrix(matrix);
+}
+
+static Janet cfun_GetScreenToWorldRay(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector2 position = jaylib_getvec2(argv, 0);
+    Camera cam = *jaylib_getcamera3d(argv, 1);
+    return jaylib_wrap_ray(GetScreenToWorldRay(position, cam));
+}
+
+static Janet cfun_GetScreenToWorldRayEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 4);
+    Vector2 position = jaylib_getvec2(argv, 0);
+    Camera cam = *jaylib_getcamera3d(argv, 1);
+    int32_t width = janet_getinteger(argv, 2);
+    int32_t height = janet_getinteger(argv, 3);
+    return jaylib_wrap_ray(GetScreenToWorldRayEx(position, cam, width, height));
 }
 
 static Janet cfun_SetTargetFPS(int32_t argc, Janet *argv) {
@@ -622,6 +653,14 @@ static Janet cfun_SetExitKey(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
 }
 
+static Janet cfun_GetKeyName(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    int key = jaylib_getkey(argv, 0);
+    const char *name = GetKeyName(key);
+    if (name == NULL) return janet_wrap_nil();
+    return janet_cstringv(name);
+}
+
 static Janet cfun_IsGamepadAvailable(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     int gamepad = janet_getinteger(argv, 0);
@@ -679,6 +718,16 @@ static Janet cfun_GetGamepadAxisMovement(int32_t argc, Janet *argv) {
     int gamepad = janet_getinteger(argv, 0);
     int axis = jaylib_getaxis(argv, 1);
     return janet_wrap_number((double) GetGamepadAxisMovement(gamepad, axis));
+}
+
+static Janet cfun_SetGamepadVibration(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 4);
+    int gamepad = janet_getinteger(argv, 0);
+    float leftMotor = (float) janet_getnumber(argv, 1);
+    float rightMotor = (float) janet_getnumber(argv, 2);
+    float duration = (float) janet_getnumber(argv, 3);
+    SetGamepadVibration(gamepad, leftMotor, rightMotor, duration);
+    return janet_wrap_nil();
 }
 
 static Janet cfun_IsMouseButtonPressed(int32_t argc, Janet *argv) {
@@ -815,6 +864,155 @@ static Janet cfun_OpenUrl(int32_t argc, Janet *argv) {
     const char *url = janet_getcstring(argv, 0);
     OpenURL(url);
     return janet_wrap_nil();
+}
+
+static Janet cfun_FileRename(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    const char *fileName = janet_getcstring(argv, 0);
+    const char *fileRename = janet_getcstring(argv, 1);
+    return janet_wrap_integer(FileRename(fileName, fileRename));
+}
+
+static Janet cfun_FileRemove(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *fileName = janet_getcstring(argv, 0);
+    return janet_wrap_integer(FileRemove(fileName));
+}
+
+static Janet cfun_FileCopy(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    const char *srcPath = janet_getcstring(argv, 0);
+    const char *dstPath = janet_getcstring(argv, 1);
+    return janet_wrap_integer(FileCopy(srcPath, dstPath));
+}
+
+static Janet cfun_FileMove(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    const char *srcPath = janet_getcstring(argv, 0);
+    const char *dstPath = janet_getcstring(argv, 1);
+    return janet_wrap_integer(FileMove(srcPath, dstPath));
+}
+
+static Janet cfun_FileTextReplace(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    const char *fileName = janet_getcstring(argv, 0);
+    const char *search = janet_getcstring(argv, 1);
+    const char *replacement = janet_getcstring(argv, 2);
+    return janet_wrap_integer(FileTextReplace(fileName, search, replacement));
+}
+
+static Janet cfun_FileTextFindIndex(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    const char *fileName = janet_getcstring(argv, 0);
+    const char *search = janet_getcstring(argv, 1);
+    return janet_wrap_integer(FileTextFindIndex(fileName, search));
+}
+
+static Janet cfun_IsFileHidden(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *filePath = janet_getcstring(argv, 0);
+    return janet_wrap_boolean(IsFileHidden(filePath));
+}
+
+static Janet cfun_MakeDirectory(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *dirPath = janet_getcstring(argv, 0);
+    return janet_wrap_integer(MakeDirectory(dirPath));
+}
+
+static Janet cfun_IsPathDirectory(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *path = janet_getcstring(argv, 0);
+    return janet_wrap_boolean(IsPathDirectory(path));
+}
+
+static Janet cfun_IsPathAbsolute(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *path = janet_getcstring(argv, 0);
+    return janet_wrap_boolean(IsPathAbsolute(path));
+}
+
+static Janet cfun_IsFileNameValid(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *fileName = janet_getcstring(argv, 0);
+    return janet_wrap_boolean(IsFileNameValid(fileName));
+}
+
+static Janet cfun_GetDirectoryFileCount(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *dirPath = janet_getcstring(argv, 0);
+    return janet_wrap_integer(GetDirectoryFileCount(dirPath));
+}
+
+static Janet cfun_GetDirectoryFileCountEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    const char *basePath = janet_getcstring(argv, 0);
+    const char *filter = janet_getcstring(argv, 1);
+    bool scanSubdirs = janet_getboolean(argv, 2);
+    return janet_wrap_integer(GetDirectoryFileCountEx(basePath, filter, scanSubdirs));
+}
+
+static Janet cfun_ComputeCRC32(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const unsigned char *data = jaylib_getunsignedcstring(argv, 0);
+    int dataSize;
+    if (janet_checktype(argv[0], JANET_BUFFER)) {
+        dataSize = janet_unwrap_buffer(argv[0])->count;
+    } else {
+        dataSize = janet_string_length(janet_unwrap_string(argv[0]));
+    }
+    return janet_wrap_integer(ComputeCRC32(data, dataSize));
+}
+
+static Janet cfun_ComputeMD5(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const unsigned char *data = jaylib_getunsignedcstring(argv, 0);
+    int dataSize;
+    if (janet_checktype(argv[0], JANET_BUFFER)) {
+        dataSize = janet_unwrap_buffer(argv[0])->count;
+    } else {
+        dataSize = janet_string_length(janet_unwrap_string(argv[0]));
+    }
+    unsigned int *hash = ComputeMD5(data, dataSize);
+    Janet *tup = janet_tuple_begin(4);
+    for (int i = 0; i < 4; i++) {
+        tup[i] = janet_wrap_integer(hash[i]);
+    }
+    return janet_wrap_tuple(janet_tuple_end(tup));
+}
+
+static Janet cfun_ComputeSHA1(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const unsigned char *data = jaylib_getunsignedcstring(argv, 0);
+    int dataSize;
+    if (janet_checktype(argv[0], JANET_BUFFER)) {
+        dataSize = janet_unwrap_buffer(argv[0])->count;
+    } else {
+        dataSize = janet_string_length(janet_unwrap_string(argv[0]));
+    }
+    unsigned int *hash = ComputeSHA1(data, dataSize);
+    Janet *tup = janet_tuple_begin(5);
+    for (int i = 0; i < 5; i++) {
+        tup[i] = janet_wrap_integer(hash[i]);
+    }
+    return janet_wrap_tuple(janet_tuple_end(tup));
+}
+
+static Janet cfun_ComputeSHA256(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const unsigned char *data = jaylib_getunsignedcstring(argv, 0);
+    int dataSize;
+    if (janet_checktype(argv[0], JANET_BUFFER)) {
+        dataSize = janet_unwrap_buffer(argv[0])->count;
+    } else {
+        dataSize = janet_string_length(janet_unwrap_string(argv[0]));
+    }
+    unsigned int *hash = ComputeSHA256(data, dataSize);
+    Janet *tup = janet_tuple_begin(8);
+    for (int i = 0; i < 8; i++) {
+        tup[i] = janet_wrap_integer(hash[i]);
+    }
+    return janet_wrap_tuple(janet_tuple_end(tup));
 }
 
 static Janet cfun_SetWindowIcon(int32_t argc, Janet *argv) {
@@ -1097,6 +1295,10 @@ static JanetReg core_cfuns[] = {
         "(set-clipboard-text text)\n\n" 
         "Set clipboard text content"
     },
+    {"get-clipboard-image", cfun_GetClipboardImage,
+        "(get-clipboard-image)\n\n"
+        "Get clipboard image content"
+    },
     {"enable-event-waiting", cfun_EnableEventWaiting, 
         "(enable-event-waiting)\n\n" 
         "Enable waiting for events on EndDrawing(), no automatic event polling"
@@ -1173,6 +1375,14 @@ static JanetReg core_cfuns[] = {
         "(get-camera-matrix-2d camera)\n\n" 
         "Get camera 2d transform matrix"
     },
+    {"get-screen-to-world-ray", cfun_GetScreenToWorldRay,
+        "(get-screen-to-world-ray position camera)\n\n"
+        "Get a ray trace from screen position (i.e mouse)"
+    },
+    {"get-screen-to-world-ray-ex", cfun_GetScreenToWorldRayEx,
+        "(get-screen-to-world-ray-ex position camera width height)\n\n"
+        "Get a ray trace from screen position (i.e mouse) in a viewport"
+    },
     {"set-target-fps", cfun_SetTargetFPS, 
         "(set-target-fps fps)\n\n" 
         "Set target FPS (maximum)"
@@ -1244,6 +1454,11 @@ static JanetReg core_cfuns[] = {
         "(set-exit-key key)\n\n" 
         "Set a custom key to exit program (default is ESC)"
     },
+    {"get-key-name", cfun_GetKeyName,
+        "(get-key-name key)\n\n"
+        "Get name of a QWERTY key on the current keyboard layout "
+        "(eg returns string 'q' for KEY_A on an AZERTY keyboard)"
+    },
     {"gamepad-available?", cfun_IsGamepadAvailable, 
         "(gamepad-available? gamepad)\n\n" 
         "Check if a gamepad is available"
@@ -1279,6 +1494,10 @@ static JanetReg core_cfuns[] = {
     {"get-gamepad-axis-movement", cfun_GetGamepadAxisMovement, 
         "(get-gamepad-axis-movement gamepad axis)\n\n" 
         "Get axis movement value for a gamepad axis"
+    },
+    {"set-gamepad-vibration", cfun_SetGamepadVibration,
+        "(set-gamepad-vibration gamepad left-motor right-motor duration)\n\n"
+        "Set gamepad vibration for both motors (duration in seconds)"
     },
     {"mouse-button-pressed?", cfun_IsMouseButtonPressed, 
         "(mouse-button-pressed? button)\n\n" 
@@ -1351,6 +1570,79 @@ static JanetReg core_cfuns[] = {
     {"open-url", cfun_OpenUrl, 
         "(open-url url)\n\n" 
         "Open URL with default system browser (if available)"
+    },
+    {"file-rename", cfun_FileRename,
+        "(file-rename file-name new-name)\n\n"
+        "Rename file (if exists), returns 0 on success"
+    },
+    {"file-remove", cfun_FileRemove,
+        "(file-remove file-name)\n\n"
+        "Remove file (if exists), returns 0 on success"
+    },
+    {"file-copy", cfun_FileCopy,
+        "(file-copy src-path dst-path)\n\n"
+        "Copy file from one path to another, dst-path created if it "
+        "doesn't exist, returns 0 on success"
+    },
+    {"file-move", cfun_FileMove,
+        "(file-move src-path dst-path)\n\n"
+        "Move file from one directory to another, dst-path created if "
+        "it doesn't exist, returns 0 on success"
+    },
+    {"file-text-replace", cfun_FileTextReplace,
+        "(file-text-replace file-name search replacement)\n\n"
+        "Replace text in an existing file, returns 0 on success"
+    },
+    {"file-text-find-index", cfun_FileTextFindIndex,
+        "(file-text-find-index file-name search)\n\n"
+        "Find text in existing file, returns -1 if index not found or "
+        "index otherwise"
+    },
+    {"file-hidden?", cfun_IsFileHidden,
+        "(file-hidden? file-path)\n\n"
+        "Check if file path (file or directory) is hidden by OS"
+    },
+    {"make-directory", cfun_MakeDirectory,
+        "(make-directory dir-path)\n\n"
+        "Create directories (including full path requested), returns 0 on success"
+    },
+    {"path-directory?", cfun_IsPathDirectory,
+        "(path-directory? path)\n\n"
+        "Check if provided path points to a directory"
+    },
+    {"path-absolute?", cfun_IsPathAbsolute,
+        "(path-absolute? path)\n\n"
+        "Check if provided path is an absolute path"
+    },
+    {"file-name-valid?", cfun_IsFileNameValid,
+        "(file-name-valid? file-name)\n\n"
+        "Check if file-name is valid for the platform/OS"
+    },
+    {"get-directory-file-count", cfun_GetDirectoryFileCount,
+        "(get-directory-file-count dir-path)\n\n"
+        "Get the file count in a directory"
+    },
+    {"get-directory-file-count-ex", cfun_GetDirectoryFileCountEx,
+        "(get-directory-file-count-ex base-path filter scan-subdirs)\n\n"
+        "Get the file count in a directory with extension filtering and "
+        "recursive directory scan. Use 'DIR' in the filter string to "
+        "include directories in the result"
+    },
+    {"compute-crc32", cfun_ComputeCRC32,
+        "(compute-crc32 data)\n\n"
+        "Compute CRC32 hash code"
+    },
+    {"compute-md5", cfun_ComputeMD5,
+        "(compute-md5 data)\n\n"
+        "Compute MD5 hash code, returns a tuple of 4 integers"
+    },
+    {"compute-sha1", cfun_ComputeSHA1,
+        "(compute-sha1 data)\n\n"
+        "Compute SHA1 hash code, returns a tuple of 5 integers"
+    },
+    {"compute-sha256", cfun_ComputeSHA256,
+        "(compute-sha256 data)\n\n"
+        "Compute SHA256 hash code, returns a tuple of 8 integers"
     },
     {"set-window-icon", cfun_SetWindowIcon, 
         "(set-window-icon image)\n\n" 

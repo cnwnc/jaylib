@@ -299,6 +299,39 @@ static Janet cfun_Vector2Equals(int32_t argc, Janet *argv) {
     return janet_wrap_boolean(Vector2Equals(p, q));
 }
 
+static Janet cfun_Vector2CrossProduct(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector2 v1 = jaylib_getvec2(argv, 0);
+    Vector2 v2 = jaylib_getvec2(argv, 1);
+
+    return janet_wrap_number(Vector2CrossProduct(v1, v2));
+}
+
+static Janet cfun_Vector2Min(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector2 v1 = jaylib_getvec2(argv, 0);
+    Vector2 v2 = jaylib_getvec2(argv, 1);
+
+    return jaylib_wrap_vec2(Vector2Min(v1, v2));
+}
+
+static Janet cfun_Vector2Max(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector2 v1 = jaylib_getvec2(argv, 0);
+    Vector2 v2 = jaylib_getvec2(argv, 1);
+
+    return jaylib_wrap_vec2(Vector2Max(v1, v2));
+}
+
+static Janet cfun_Vector2Refract(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    Vector2 v = jaylib_getvec2(argv, 0);
+    Vector2 n = jaylib_getvec2(argv, 1);
+    float r = janet_getnumber(argv, 2);
+
+    return jaylib_wrap_vec2(Vector2Refract(v, n, r));
+}
+
 //----------------------------------------------------------------------------------
 // Module Functions Definition - Vector3 math
 //----------------------------------------------------------------------------------
@@ -599,6 +632,202 @@ static Janet cfun_Vector3Refract(int32_t argc, Janet *argv) {
     return jaylib_wrap_vec3(Vector3Refract(v, n, r));
 }
 
+static Janet cfun_Vector3MoveTowards(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    Vector3 v = jaylib_getvec3(argv, 0);
+    Vector3 target = jaylib_getvec3(argv, 1);
+    float maxDistance = janet_getnumber(argv, 2);
+
+    return jaylib_wrap_vec3(Vector3MoveTowards(v, target, maxDistance));
+}
+
+static Janet cfun_Vector3CubicHermite(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Vector3 v1 = jaylib_getvec3(argv, 0);
+    Vector3 tangent1 = jaylib_getvec3(argv, 1);
+    Vector3 v2 = jaylib_getvec3(argv, 2);
+    Vector3 tangent2 = jaylib_getvec3(argv, 3);
+    float amount = janet_getnumber(argv, 4);
+
+    return jaylib_wrap_vec3(Vector3CubicHermite(v1, tangent1, v2, tangent2, amount));
+}
+
+//----------------------------------------------------------------------------------
+// Module Functions Definition - Vector4 math
+//----------------------------------------------------------------------------------
+
+static Janet cfun_Vector4Zero(int32_t argc, Janet *argv) {
+    (void)argv;
+    janet_fixarity(argc, 0);
+
+    return jaylib_wrap_vec4(Vector4Zero());
+}
+
+static Janet cfun_Vector4One(int32_t argc, Janet *argv) {
+    (void)argv;
+    janet_fixarity(argc, 0);
+
+    return jaylib_wrap_vec4(Vector4One());
+}
+
+static Janet cfun_Vector4Add(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v1 = jaylib_getvec4(argv, 0);
+    Vector4 v2 = jaylib_getvec4(argv, 1);
+
+    return jaylib_wrap_vec4(Vector4Add(v1, v2));
+}
+
+static Janet cfun_Vector4AddValue(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v = jaylib_getvec4(argv, 0);
+    float add = janet_getnumber(argv, 1);
+
+    return jaylib_wrap_vec4(Vector4AddValue(v, add));
+}
+
+static Janet cfun_Vector4Subtract(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v1 = jaylib_getvec4(argv, 0);
+    Vector4 v2 = jaylib_getvec4(argv, 1);
+
+    return jaylib_wrap_vec4(Vector4Subtract(v1, v2));
+}
+
+static Janet cfun_Vector4SubtractValue(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v = jaylib_getvec4(argv, 0);
+    float sub = janet_getnumber(argv, 1);
+
+    return jaylib_wrap_vec4(Vector4SubtractValue(v, sub));
+}
+
+static Janet cfun_Vector4Length(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    Vector4 v = jaylib_getvec4(argv, 0);
+
+    return janet_wrap_number(Vector4Length(v));
+}
+
+static Janet cfun_Vector4LengthSqr(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    Vector4 v = jaylib_getvec4(argv, 0);
+
+    return janet_wrap_number(Vector4LengthSqr(v));
+}
+
+static Janet cfun_Vector4DotProduct(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v1 = jaylib_getvec4(argv, 0);
+    Vector4 v2 = jaylib_getvec4(argv, 1);
+
+    return janet_wrap_number(Vector4DotProduct(v1, v2));
+}
+
+static Janet cfun_Vector4Distance(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v1 = jaylib_getvec4(argv, 0);
+    Vector4 v2 = jaylib_getvec4(argv, 1);
+
+    return janet_wrap_number(Vector4Distance(v1, v2));
+}
+
+static Janet cfun_Vector4DistanceSqr(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v1 = jaylib_getvec4(argv, 0);
+    Vector4 v2 = jaylib_getvec4(argv, 1);
+
+    return janet_wrap_number(Vector4DistanceSqr(v1, v2));
+}
+
+static Janet cfun_Vector4Scale(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v = jaylib_getvec4(argv, 0);
+    float scalar = janet_getnumber(argv, 1);
+
+    return jaylib_wrap_vec4(Vector4Scale(v, scalar));
+}
+
+static Janet cfun_Vector4Multiply(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v1 = jaylib_getvec4(argv, 0);
+    Vector4 v2 = jaylib_getvec4(argv, 1);
+
+    return jaylib_wrap_vec4(Vector4Multiply(v1, v2));
+}
+
+static Janet cfun_Vector4Negate(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    Vector4 v = jaylib_getvec4(argv, 0);
+    Vector4 result = {-v.x, -v.y, -v.z, -v.w};
+
+    return jaylib_wrap_vec4(result);
+}
+
+static Janet cfun_Vector4Divide(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v1 = jaylib_getvec4(argv, 0);
+    Vector4 v2 = jaylib_getvec4(argv, 1);
+
+    return jaylib_wrap_vec4(Vector4Divide(v1, v2));
+}
+
+static Janet cfun_Vector4Normalize(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    Vector4 v = jaylib_getvec4(argv, 0);
+
+    return jaylib_wrap_vec4(Vector4Normalize(v));
+}
+
+static Janet cfun_Vector4Min(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v1 = jaylib_getvec4(argv, 0);
+    Vector4 v2 = jaylib_getvec4(argv, 1);
+
+    return jaylib_wrap_vec4(Vector4Min(v1, v2));
+}
+
+static Janet cfun_Vector4Max(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 v1 = jaylib_getvec4(argv, 0);
+    Vector4 v2 = jaylib_getvec4(argv, 1);
+
+    return jaylib_wrap_vec4(Vector4Max(v1, v2));
+}
+
+static Janet cfun_Vector4Lerp(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    Vector4 v1 = jaylib_getvec4(argv, 0);
+    Vector4 v2 = jaylib_getvec4(argv, 1);
+    float amount = janet_getnumber(argv, 2);
+
+    return jaylib_wrap_vec4(Vector4Lerp(v1, v2, amount));
+}
+
+static Janet cfun_Vector4MoveTowards(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    Vector4 v = jaylib_getvec4(argv, 0);
+    Vector4 target = jaylib_getvec4(argv, 1);
+    float maxDistance = janet_getnumber(argv, 2);
+
+    return jaylib_wrap_vec4(Vector4MoveTowards(v, target, maxDistance));
+}
+
+static Janet cfun_Vector4Invert(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    Vector4 v = jaylib_getvec4(argv, 0);
+
+    return jaylib_wrap_vec4(Vector4Invert(v));
+}
+
+static Janet cfun_Vector4Equals(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Vector4 p = jaylib_getvec4(argv, 0);
+    Vector4 q = jaylib_getvec4(argv, 1);
+
+    return janet_wrap_boolean(Vector4Equals(p, q));
+}
+
 //----------------------------------------------------------------------------------
 // Module Functions Definition - Matrix math
 //----------------------------------------------------------------------------------
@@ -789,6 +1018,39 @@ static Janet cfun_MatrixToFloatV(int32_t argc, Janet *argv) {
     return janet_wrap_array(arr);
 }
 
+static Janet cfun_MatrixMultiplyValue(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    Matrix left = jaylib_getmatrix(argv, 0);
+    float value = janet_getnumber(argv, 1);
+
+    return jaylib_wrap_matrix(MatrixMultiplyValue(left, value));
+}
+
+static Janet cfun_MatrixCompose(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    Vector3 translation = jaylib_getvec3(argv, 0);
+    Quaternion rotation = jaylib_getvec4(argv, 1);
+    Vector3 scale = jaylib_getvec3(argv, 2);
+
+    return jaylib_wrap_matrix(MatrixCompose(translation, rotation, scale));
+}
+
+static Janet cfun_MatrixDecompose(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    Matrix mat = jaylib_getmatrix(argv, 0);
+    Vector3 translation;
+    Quaternion rotation;
+    Vector3 scale;
+
+    MatrixDecompose(mat, &translation, &rotation, &scale);
+
+    Janet *tup = janet_tuple_begin(3);
+    tup[0] = jaylib_wrap_vec3(translation);
+    tup[1] = jaylib_wrap_vec4(rotation);
+    tup[2] = jaylib_wrap_vec3(scale);
+    return janet_wrap_tuple(janet_tuple_end(tup));
+}
+
 static Janet cfun_QuaternionAdd(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 2);
     Quaternion q1 = jaylib_getvec4(argv, 0);
@@ -965,6 +1227,18 @@ static Janet cfun_QuaternionEquals(int32_t argc, Janet *argv) {
 
     return janet_wrap_boolean(QuaternionEquals(p, q));
 }
+
+static Janet cfun_QuaternionCubicHermiteSpline(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Quaternion q1 = jaylib_getvec4(argv, 0);
+    Quaternion outTangent1 = jaylib_getvec4(argv, 1);
+    Quaternion q2 = jaylib_getvec4(argv, 2);
+    Quaternion inTangent2 = jaylib_getvec4(argv, 3);
+    float t = janet_getnumber(argv, 4);
+
+    return jaylib_wrap_vec4(QuaternionCubicHermiteSpline(q1, outTangent1, q2, inTangent2, t));
+}
+
 static const JanetReg math_cfuns[] = {
     // Utils
     {
@@ -1141,6 +1415,35 @@ static const JanetReg math_cfuns[] = {
         "vector2-equals", cfun_Vector2Equals,
         "(vector2-equals p q)\n\n"
         "Check whether the two given vectors are almost equal"
+    },
+    {
+        "vector2-cross", cfun_Vector2CrossProduct,
+        "(vector2-cross v1 v2)\n\n"
+        "Calculate the cross product of two vectors"
+    },
+    {
+        "vector2-min", cfun_Vector2Min,
+        "(vector2-min v1 v2)\n\n"
+        "Get the minimum value for each pair of components"
+    },
+    {
+        "vector2-max", cfun_Vector2Max,
+        "(vector2-max v1 v2)\n\n"
+        "Get the maximum value for each pair of components"
+    },
+    {
+        "vector2-refract", cfun_Vector2Refract,
+        "(vector2-refract v n r)\n\n"
+        "Compute the direction of a refracted ray"
+        "\n"
+        "v: normalized direction of the incoming ray"
+        "\n"
+        "n: normalized normal vector of the interface of two optical media"
+        "\n"
+        "r: ratio of the refractive index of the medium from where the ray comes"
+        "\n"
+        "   to the refractive index of the medium on the other side of the "
+        "surface"
     },
 
     // Vector3
@@ -1338,6 +1641,129 @@ static const JanetReg math_cfuns[] = {
         "   to the refractive index of the medium on the other side of the "
         "surface"
     },
+    {
+        "vector3-move-towards", cfun_Vector3MoveTowards,
+        "(vector3-move-towards v target max-distance)\n\n"
+        "Move vector towards target"
+    },
+    {
+        "vector3-cubic-hermite", cfun_Vector3CubicHermite,
+        "(vector3-cubic-hermite v1 tangent1 v2 tangent2 amount)\n\n"
+        "Calculate cubic hermite interpolation between two vectors and their "
+        "tangents"
+    },
+
+    // Vector4
+    {
+        "vector4-zero", cfun_Vector4Zero,
+        "(vector4-zero)\n\n"
+        "Vector with components 0.0"
+    },
+    {
+        "vector4-one", cfun_Vector4One,
+        "(vector4-one)\n\n"
+        "Vector with components 1.0"
+    },
+    {
+        "vector4-add", cfun_Vector4Add,
+        "(vector4-add v1 v2)\n\n"
+        "Add two vectors (v1 + v2)"
+    },
+    {
+        "vector4-add-val", cfun_Vector4AddValue,
+        "(vector4-add-val v x)\n\n"
+        "Add vector and x"
+    },
+    {
+        "vector4-sub", cfun_Vector4Subtract,
+        "(vector4-sub v1 v2)\n\n"
+        "Subtract two vectors (v1 - v2)"
+    },
+    {
+        "vector4-sub-val", cfun_Vector4SubtractValue,
+        "(vector4-sub-val v x)\n\n"
+        "Subtract vector by x"
+    },
+    {
+        "vector4-length", cfun_Vector4Length,
+        "(vector4-length v)\n\n"
+        "Calculate vector length"
+    },
+    {
+        "vector4-length-sqr", cfun_Vector4LengthSqr,
+        "(vector4-length-sqr v)\n\n"
+        "Calculate vector square length"
+    },
+    {
+        "vector4-dot", cfun_Vector4DotProduct,
+        "(vector4-dot v1 v2)\n\n"
+        "Calculate the dot product of two vectors"
+    },
+    {
+        "vector4-distance", cfun_Vector4Distance,
+        "(vector4-distance v1 v2)\n\n"
+        "Calculate distance between two vectors"
+    },
+    {
+        "vector4-distance-sqr", cfun_Vector4DistanceSqr,
+        "(vector4-distance-sqr v1 v2)\n\n"
+        "Calculate square distance between two vectors"
+    },
+    {
+        "vector4-scale", cfun_Vector4Scale,
+        "(vector4-scale v scalar)\n\n"
+        "Scale vector by scalar"
+    },
+    {
+        "vector4-multiply", cfun_Vector4Multiply,
+        "(vector4-multiply v1 v2)\n\n"
+        "Multiply vector by vector"
+    },
+    {
+        "vector4-negate", cfun_Vector4Negate,
+        "(vector4-negate v)\n\n"
+        "Negate vector"
+    },
+    {
+        "vector4-divide", cfun_Vector4Divide,
+        "(vector4-divide v1 v2)\n\n"
+        "Divide vector by vector"
+    },
+    {
+        "vector4-normalize", cfun_Vector4Normalize,
+        "(vector4-normalize v)\n\n"
+        "Normalize provided vector"
+    },
+    {
+        "vector4-min", cfun_Vector4Min,
+        "(vector4-min v1 v2)\n\n"
+        "Get the minimum value for each pair of components"
+    },
+    {
+        "vector4-max", cfun_Vector4Max,
+        "(vector4-max v1 v2)\n\n"
+        "Get the maximum value for each pair of components"
+    },
+    {
+        "vector4-lerp", cfun_Vector4Lerp,
+        "(vector4-lerp v1 v2 amount)\n\n"
+        "Calculate linear interpolation between two vectors"
+    },
+    {
+        "vector4-move-towards", cfun_Vector4MoveTowards,
+        "(vector4-move-towards v target max-distance)\n\n"
+        "Move vector towards target"
+    },
+    {
+        "vector4-invert", cfun_Vector4Invert,
+        "(vector4-invert v)\n\n"
+        "Invert vector"
+    },
+    {
+        "vector4-equals", cfun_Vector4Equals,
+        "(vector4-equals p q)\n\n"
+        "Check whether the two given vectors are almost equal"
+    },
 
     // Matrix
     {
@@ -1457,6 +1883,25 @@ static const JanetReg math_cfuns[] = {
         "(matrix-lookat m)\n\n"
         "Get m as an array of 16 numbers"
     },
+    {
+        "matrix-multiply-val", cfun_MatrixMultiplyValue,
+        "(matrix-multiply-val m value)\n\n"
+        "Multiply matrix components by value"
+    },
+    {
+        "matrix-compose", cfun_MatrixCompose,
+        "(matrix-compose translation rotation scale)\n\n"
+        "Compose a transformation matrix from rotational, translational and "
+        "scaling components"
+    },
+    {
+        "matrix-decompose", cfun_MatrixDecompose,
+        "(matrix-decompose m)\n\n"
+        "Decompose a transformation matrix into its rotational, translational "
+        "and scaling components and remove shear"
+        "\n"
+        "Returns a tuple of translation, rotation quaternion and scale"
+    },
 
     // Quaternion
     {
@@ -1575,6 +2020,12 @@ static const JanetReg math_cfuns[] = {
         "quaternion-equals", cfun_QuaternionEquals,
         "(quaternion-equals p q)\n\n"
         "Check whether two given quaternions are almost equal"
+    },
+    {
+        "quaternion-cubic-hermite-spline", cfun_QuaternionCubicHermiteSpline,
+        "(quaternion-cubic-hermite-spline q1 out-tangent1 q2 in-tangent2 t)\n\n"
+        "Calculate quaternion cubic spline interpolation using Cubic Hermite "
+        "Spline algorithm"
     },
     { NULL, NULL, NULL }
 };

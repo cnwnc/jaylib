@@ -46,10 +46,10 @@ static Janet cfun_LoadWave(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(wave);
 }
 
-static Janet cfun_IsWaveReady(int32_t argc, Janet *argv) {
+static Janet cfun_IsWaveValid(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     Wave wave = *jaylib_getwave(argv, 0);
-    if (IsWaveReady(wave)) {
+    if (IsWaveValid(wave)) {
         return janet_wrap_true();
     } else {
         return janet_wrap_false();
@@ -72,10 +72,10 @@ static Janet cfun_LoadSoundFromWave(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(sound);
 }
 
-static Janet cfun_IsSoundReady(int32_t argc, Janet *argv) {
+static Janet cfun_IsSoundValid(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     Sound sound = *jaylib_getsound(argv, 0);
-    if (IsSoundReady(sound)) {
+    if (IsSoundValid(sound)) {
         return janet_wrap_true();
     } else {
         return janet_wrap_false();
@@ -188,10 +188,10 @@ static Janet cfun_LoadMusicStreamFromMemory(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(music);
 }
 
-static Janet cfun_IsMusicReady(int32_t argc, Janet *argv) {
+static Janet cfun_IsMusicValid(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     Music music = *jaylib_getmusic(argv, 0);
-    if (IsMusicReady(music)) {
+    if (IsMusicValid(music)) {
         return janet_wrap_true();
     } else {
         return janet_wrap_false();
@@ -340,6 +340,16 @@ static Janet cfun_IsAudioStreamPlaying(int32_t argc, Janet *argv) {
     return janet_wrap_boolean(IsAudioStreamPlaying(stream));
 }
 
+static Janet cfun_IsAudioStreamValid(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    AudioStream stream = *jaylib_getaudiostream(argv, 0);
+    if (IsAudioStreamValid(stream)) {
+        return janet_wrap_true();
+    } else {
+        return janet_wrap_false();
+    }
+}
+
 static Janet cfun_SetAudioStreamVolume(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 2);
     AudioStream stream = *jaylib_getaudiostream(argv, 0);
@@ -388,17 +398,17 @@ static JanetReg audio_cfuns[] = {
         "(load-wave file-name)\n\n"
         "Load wave data from file"
     },
-    {"wave-ready?", cfun_IsWaveReady,
-        "(wave-ready? wave)\n\n"
-        "Checks if wave data is ready"
+    {"wave-valid?", cfun_IsWaveValid,
+        "(wave-valid? wave)\n\n"
+        "Checks if wave data is valid"
     },
     {"load-sound", cfun_LoadSound, 
         "(load-sound file-name)\n\n"
         "Load sound from file"
     },
-    {"sound-ready?", cfun_IsSoundReady,
-        "(sound-ready? wave)\n\n"
-        "Checks if sound is ready"
+    {"sound-valid?", cfun_IsSoundValid,
+        "(sound-valid? sound)\n\n"
+        "Checks if sound is valid"
     },
     {"load-sound-from-wave", cfun_LoadSoundFromWave, 
         "(load-sound-from-wave wave)\n\n"
@@ -460,9 +470,9 @@ static JanetReg audio_cfuns[] = {
         "(load-music-stream-from-memory file-type data data-size)\n\n"
         "Load music stream from data"
     },
-    {"music-ready?", cfun_IsMusicReady,
-        "(music-ready? wave)\n\n"
-        "Checks if a music stream is ready"
+    {"music-valid?", cfun_IsMusicValid,
+        "(music-valid? music)\n\n"
+        "Checks if a music stream is valid"
     },
     {"unload-music-stream", cfun_UnloadMusicStream, 
         "(unload-music-stream music)\n\n"
@@ -551,6 +561,10 @@ static JanetReg audio_cfuns[] = {
     {"set-audio-stream-pitch", cfun_SetAudioStreamPitch, 
         "(set-audio-stream-pitch stream pitch)\n\n"
         "Set pitch for audio stream (1.0 is base level)"
+    },
+    {"audio-stream-valid?", cfun_IsAudioStreamValid,
+        "(audio-stream-valid? stream)\n\n"
+        "Checks if an audio stream is valid"
     },
     {NULL, NULL, NULL}
 };

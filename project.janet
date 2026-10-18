@@ -12,7 +12,8 @@
     :windows ["-Iraylib/src" "-Iraylib/src/external/glfw/include" ]
     # you might need to edit ./raylib/src/external/glfw/src/x11_init.c:1124
     # to match /usr/X11R6/lib/libX11.so*
-    :openbsd '["-Iraylib/src" "-Iraylib/src/external/glfw/include" "-I/usr/X11R6/include" "-Du_char=unsigned char" "-Dalloca(x)=malloc(x)"]
+    :openbsd '["-Iraylib/src" "-Iraylib/src/external/glfw/include" "-I/usr/X11R6/include" "-D_GLFW_X11" "-Du_char=unsigned char" "-Dalloca(x)=malloc(x)"]
+    :linux '["-Iraylib/src" "-Iraylib/src/external/glfw/include" "-D_GLFW_X11"]
     #default
     '["-Iraylib/src" "-Iraylib/src/external/glfw/include"]))
 
@@ -45,8 +46,7 @@
            "raylib/src/rglfw.c"
            "raylib/src/rshapes.c"
            "raylib/src/rtext.c"
-           "raylib/src/rtextures.c"
-           "raylib/src/utils.c"]
+           "raylib/src/rtextures.c"]
 
   :headers ["src/core.h"
             "src/types.h"

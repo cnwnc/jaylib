@@ -31,10 +31,10 @@ static Janet cfun_LoadFont(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(font);
 }
 
-static Janet cfun_IsFontReady(int32_t argc, Janet *argv) {
+static Janet cfun_IsFontValid(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 1);
     Font font = *jaylib_getfont(argv, 0);
-    if (IsFontReady(font)) {
+    if (IsFontValid(font)) {
         return janet_wrap_true();
     } else {
         return janet_wrap_false();
@@ -190,6 +190,119 @@ static Janet cfun_GetFontTexture(int32_t argc, Janet *argv) {
     return janet_wrap_abstract(texture);
 }
 
+static Janet cfun_MeasureTextCodepoints(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 4);
+    Font font = *jaylib_getfont(argv, 0);
+    JanetView ints = janet_getindexed(argv, 1);
+    int *raw_ints = janet_smalloc(sizeof(int) * ints.len);
+    for (int32_t i = 0; i < ints.len; i++) {
+        raw_ints[i] = janet_getinteger(ints.items, i);
+    }
+    float fontSize = (float) janet_getnumber(argv, 2);
+    float spacing = (float) janet_getnumber(argv, 3);
+    Vector2 size = MeasureTextCodepoints(font, raw_ints, ints.len, fontSize, spacing);
+    janet_sfree(raw_ints);
+    return jaylib_wrap_vec2(size);
+}
+
+static Janet cfun_LoadTextLines(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *text = jaylib_getcstring(argv, 0);
+    int count = 0;
+    char **lines = LoadTextLines(text, &count);
+    JanetArray *array = janet_array(0);
+    for (int i = 0; i < count; i++) {
+        janet_array_push(array, janet_cstringv(lines[i]));
+    }
+    UnloadTextLines(lines, count);
+    return janet_wrap_array(array);
+}
+
+static Janet cfun_TextRemoveSpaces(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *text = jaylib_getcstring(argv, 0);
+    return janet_cstringv(TextRemoveSpaces(text));
+}
+
+static Janet cfun_GetTextBetween(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    const char *text = jaylib_getcstring(argv, 0);
+    const char *begin = jaylib_getcstring(argv, 1);
+    const char *end = jaylib_getcstring(argv, 2);
+    char *between = GetTextBetween(text, begin, end);
+    return janet_cstringv(between);
+}
+
+static Janet cfun_TextReplaceAlloc(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    const char *text = jaylib_getcstring(argv, 0);
+    const char *search = jaylib_getcstring(argv, 1);
+    const char *replacement = jaylib_getcstring(argv, 2);
+    char *replaced = TextReplaceAlloc(text, search, replacement);
+    if (replaced == NULL) {
+        return janet_wrap_nil();
+    }
+    Janet out = janet_cstringv(replaced);
+    MemFree(replaced);
+    return out;
+}
+
+static Janet cfun_TextReplaceBetween(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 4);
+    const char *text = jaylib_getcstring(argv, 0);
+    const char *begin = jaylib_getcstring(argv, 1);
+    const char *end = jaylib_getcstring(argv, 2);
+    const char *replacement = jaylib_getcstring(argv, 3);
+    return janet_cstringv(TextReplaceBetween(text, begin, end, replacement));
+}
+
+static Janet cfun_TextReplaceBetweenAlloc(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 4);
+    const char *text = jaylib_getcstring(argv, 0);
+    const char *begin = jaylib_getcstring(argv, 1);
+    const char *end = jaylib_getcstring(argv, 2);
+    const char *replacement = jaylib_getcstring(argv, 3);
+    char *replaced = TextReplaceBetweenAlloc(text, begin, end, replacement);
+    if (replaced == NULL) {
+        return janet_wrap_nil();
+    }
+    Janet out = janet_cstringv(replaced);
+    MemFree(replaced);
+    return out;
+}
+
+static Janet cfun_TextInsertAlloc(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 3);
+    const char *text = jaylib_getcstring(argv, 0);
+    const char *insert = jaylib_getcstring(argv, 1);
+    int position = janet_getinteger(argv, 2);
+    char *inserted = TextInsertAlloc(text, insert, position);
+    if (inserted == NULL) {
+        return janet_wrap_nil();
+    }
+    Janet out = janet_cstringv(inserted);
+    MemFree(inserted);
+    return out;
+}
+
+static Janet cfun_TextToSnake(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *text = jaylib_getcstring(argv, 0);
+    return janet_cstringv(TextToSnake(text));
+}
+
+static Janet cfun_TextToCamel(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *text = jaylib_getcstring(argv, 0);
+    return janet_cstringv(TextToCamel(text));
+}
+
+static Janet cfun_TextToFloat(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    const char *text = jaylib_getcstring(argv, 0);
+    return janet_wrap_number((double) TextToFloat(text));
+}
+
 static JanetReg text_cfuns[] = {
     {"get-font-default", cfun_GetFontDefault, 
         "(get-font-default)\n\n" 
@@ -199,9 +312,9 @@ static JanetReg text_cfuns[] = {
         "(load-font file-name)\n\n"
         "Load font from file into GPU memory (VRAM)"
     },
-    {"font-ready?", cfun_IsFontReady,
-        "(font-ready? font)\n\n"
-        "Check if a font is ready"
+    {"font-valid?", cfun_IsFontValid,
+        "(font-valid? font)\n\n"
+        "Check if a font is valid"
     },
     {"load-font-ex", cfun_LoadFontEx,
         "(load-font-ex file-name font-size &opt font-chars)\n\n"
@@ -251,9 +364,54 @@ static JanetReg text_cfuns[] = {
         "(get-glyph-index font codepoint)\n\n" 
         "Get glyph index position in font for a codepoint (unicode character), fallback to '?' if not found"
     },
-    {"get-font-texture", cfun_GetFontTexture, 
-        "(get-font-texture font)\n\n" 
+    {"get-font-texture", cfun_GetFontTexture,
+        "(get-font-texture font)\n\n"
         ""
+    },
+    {"measure-text-codepoints", cfun_MeasureTextCodepoints,
+        "(measure-text-codepoints font codepoints font-size spacing)\n\n"
+        "Measure string size for an array of codepoints for Font"
+    },
+    {"load-text-lines", cfun_LoadTextLines,
+        "(load-text-lines text)\n\n"
+        "Load text as separate lines (split on newline), returning an array of strings. "
+        "The C memory for the lines is released immediately, so there is no unload-text-lines binding"
+    },
+    {"text-remove-spaces", cfun_TextRemoveSpaces,
+        "(text-remove-spaces text)\n\n"
+        "Remove text spaces, concat words"
+    },
+    {"get-text-between", cfun_GetTextBetween,
+        "(get-text-between text begin end)\n\n"
+        "Get text between two strings"
+    },
+    {"text-replace-alloc", cfun_TextReplaceAlloc,
+        "(text-replace-alloc text search replacement)\n\n"
+        "Replace text string with new string"
+    },
+    {"text-replace-between", cfun_TextReplaceBetween,
+        "(text-replace-between text begin end replacement)\n\n"
+        "Replace text between two specific strings"
+    },
+    {"text-replace-between-alloc", cfun_TextReplaceBetweenAlloc,
+        "(text-replace-between-alloc text begin end replacement)\n\n"
+        "Replace text between two specific strings"
+    },
+    {"text-insert-alloc", cfun_TextInsertAlloc,
+        "(text-insert-alloc text insert position)\n\n"
+        "Insert text in a defined byte position"
+    },
+    {"text-to-snake", cfun_TextToSnake,
+        "(text-to-snake text)\n\n"
+        "Get Snake case notation version of provided string"
+    },
+    {"text-to-camel", cfun_TextToCamel,
+        "(text-to-camel text)\n\n"
+        "Get Camel case notation version of provided string"
+    },
+    {"text-to-float", cfun_TextToFloat,
+        "(text-to-float text)\n\n"
+        "Get float value from text"
     },
     {NULL, NULL, NULL}
 };

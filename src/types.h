@@ -479,7 +479,7 @@ static Janet jaylib_wrap_vec3(Vector3 x) {
 }
 
 static Janet jaylib_wrap_vec4(Vector4 x) {
-    Janet *tup = janet_tuple_begin(3);
+    Janet *tup = janet_tuple_begin(4);
     tup[0] = janet_wrap_number(x.x);
     tup[1] = janet_wrap_number(x.y);
     tup[2] = janet_wrap_number(x.z);

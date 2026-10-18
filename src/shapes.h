@@ -119,13 +119,12 @@ static Janet cfun_DrawCircleSectorLines(int32_t argc, Janet *argv) {
 }
 
 static Janet cfun_DrawCircleGradient(int32_t argc, Janet *argv) {
-    janet_fixarity(argc, 5);
-    int centerX = janet_getinteger(argv, 0);
-    int centerY = janet_getinteger(argv, 1);
-    float radius = (float) janet_getnumber(argv, 2);
-    Color c1 = jaylib_getcolor(argv, 3);
-    Color c2 = jaylib_getcolor(argv, 4);
-    DrawCircleGradient(centerX, centerY, radius, c1, c2);
+    janet_fixarity(argc, 4);
+    Vector2 center = jaylib_getvec2(argv, 0);
+    float radius = (float) janet_getnumber(argv, 1);
+    Color c1 = jaylib_getcolor(argv, 2);
+    Color c2 = jaylib_getcolor(argv, 3);
+    DrawCircleGradient(center, radius, c1, c2);
     return janet_wrap_nil();
 }
 
@@ -268,14 +267,14 @@ static Janet cfun_DrawRectangleRounded(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
 }
 
-static Janet cfun_DrawRectangleRoundedLines(int32_t argc, Janet *argv) {
+static Janet cfun_DrawRectangleRoundedLinesEx(int32_t argc, Janet *argv) {
     janet_fixarity(argc, 5);
     Rectangle rec = jaylib_getrect(argv, 0);
     float roundness = (float) janet_getnumber(argv, 1);
     int segments = janet_getinteger(argv, 2);
-    int lineThick = janet_getinteger(argv, 3);
+    float lineThick = (float) janet_getnumber(argv, 3);
     Color color = jaylib_getcolor(argv, 4);
-    DrawRectangleRoundedLines(rec, roundness, segments, lineThick, color);
+    DrawRectangleRoundedLinesEx(rec, roundness, segments, lineThick, color);
     return janet_wrap_nil();
 }
 
@@ -460,6 +459,151 @@ static Janet cfun_GetCollisionRec(int32_t argc, Janet *argv) {
     return janet_wrap_tuple(janet_tuple_end(tup));
 }
 
+static Janet cfun_GetShapesTexture(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    Texture2D *texture = janet_abstract(&AT_Texture2D, sizeof(Texture2D));
+    *texture = GetShapesTexture();
+    return janet_wrap_abstract(texture);
+}
+
+static Janet cfun_GetShapesTextureRectangle(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    Rectangle res = GetShapesTextureRectangle();
+    Janet *tup = janet_tuple_begin(4);
+    tup[0] = janet_wrap_number(res.x);
+    tup[1] = janet_wrap_number(res.y);
+    tup[2] = janet_wrap_number(res.width);
+    tup[3] = janet_wrap_number(res.height);
+    return janet_wrap_tuple(janet_tuple_end(tup));
+}
+
+static Janet cfun_DrawLineDashed(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Vector2 startPos = jaylib_getvec2(argv, 0);
+    Vector2 endPos = jaylib_getvec2(argv, 1);
+    int dashSize = janet_getinteger(argv, 2);
+    int spaceSize = janet_getinteger(argv, 3);
+    Color color = jaylib_getcolor(argv, 4);
+    DrawLineDashed(startPos, endPos, dashSize, spaceSize, color);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_DrawTriangleGradient(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 6);
+    Vector2 v1 = jaylib_getvec2(argv, 0);
+    Vector2 v2 = jaylib_getvec2(argv, 1);
+    Vector2 v3 = jaylib_getvec2(argv, 2);
+    Color c1 = jaylib_getcolor(argv, 3);
+    Color c2 = jaylib_getcolor(argv, 4);
+    Color c3 = jaylib_getcolor(argv, 5);
+    DrawTriangleGradient(v1, v2, v3, c1, c2, c3);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_DrawTriangleLinesEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Vector2 v1 = jaylib_getvec2(argv, 0);
+    Vector2 v2 = jaylib_getvec2(argv, 1);
+    Vector2 v3 = jaylib_getvec2(argv, 2);
+    float thick = (float) janet_getnumber(argv, 3);
+    Color color = jaylib_getcolor(argv, 4);
+    DrawTriangleLinesEx(v1, v2, v3, thick, color);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_DrawCircleSectorLinesEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 7);
+    Vector2 center = jaylib_getvec2(argv, 0);
+    float radius = (float) janet_getnumber(argv, 1);
+    float startAngle = (float) janet_getnumber(argv, 2);
+    float endAngle = (float) janet_getnumber(argv, 3);
+    int segments = janet_getinteger(argv, 4);
+    float thick = (float) janet_getnumber(argv, 5);
+    Color color = jaylib_getcolor(argv, 6);
+    DrawCircleSectorLinesEx(center, radius, startAngle, endAngle, segments, thick, color);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_DrawCircleLinesEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 4);
+    Vector2 center = jaylib_getvec2(argv, 0);
+    float radius = (float) janet_getnumber(argv, 1);
+    float thick = (float) janet_getnumber(argv, 2);
+    Color color = jaylib_getcolor(argv, 3);
+    DrawCircleLinesEx(center, radius, thick, color);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_DrawEllipseV(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 4);
+    Vector2 center = jaylib_getvec2(argv, 0);
+    float radiusH = (float) janet_getnumber(argv, 1);
+    float radiusV = (float) janet_getnumber(argv, 2);
+    Color color = jaylib_getcolor(argv, 3);
+    DrawEllipseV(center, radiusH, radiusV, color);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_DrawEllipseLinesV(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 4);
+    Vector2 center = jaylib_getvec2(argv, 0);
+    float radiusH = (float) janet_getnumber(argv, 1);
+    float radiusV = (float) janet_getnumber(argv, 2);
+    Color color = jaylib_getcolor(argv, 3);
+    DrawEllipseLinesV(center, radiusH, radiusV, color);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_DrawEllipseLinesEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 5);
+    Vector2 center = jaylib_getvec2(argv, 0);
+    float radiusH = (float) janet_getnumber(argv, 1);
+    float radiusV = (float) janet_getnumber(argv, 2);
+    float thick = (float) janet_getnumber(argv, 3);
+    Color color = jaylib_getcolor(argv, 4);
+    DrawEllipseLinesEx(center, radiusH, radiusV, thick, color);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_DrawRingLinesEx(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 8);
+    Vector2 center = jaylib_getvec2(argv, 0);
+    float innerRadius = (float) janet_getnumber(argv, 1);
+    float outerRadius = (float) janet_getnumber(argv, 2);
+    float startAngle = (float) janet_getnumber(argv, 3);
+    float endAngle = (float) janet_getnumber(argv, 4);
+    int segments = janet_getinteger(argv, 5);
+    float thick = (float) janet_getnumber(argv, 6);
+    Color color = jaylib_getcolor(argv, 7);
+    DrawRingLinesEx(center, innerRadius, outerRadius, startAngle, endAngle, segments, thick, color);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_GetSplinePointBezierQuadratic(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 4);
+    Vector2 p1 = jaylib_getvec2(argv, 0);
+    Vector2 c2 = jaylib_getvec2(argv, 1);
+    Vector2 p3 = jaylib_getvec2(argv, 2);
+    float t = (float) janet_getnumber(argv, 3);
+    Vector2 result = GetSplinePointBezierQuadratic(p1, c2, p3, t);
+    return jaylib_wrap_vec2(result);
+}
+
+static Janet cfun_CheckCollisionCircleLine(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 4);
+    Vector2 center = jaylib_getvec2(argv, 0);
+    float radius = (float) janet_getnumber(argv, 1);
+    Vector2 p1 = jaylib_getvec2(argv, 2);
+    Vector2 p2 = jaylib_getvec2(argv, 3);
+    if (CheckCollisionCircleLine(center, radius, p1, p2)) {
+        return janet_wrap_true();
+    } else {
+        return janet_wrap_false();
+    }
+}
+
 static JanetReg shapes_cfuns[] = {
     {"draw-pixel", cfun_DrawPixel, 
         "(draw-pixel pos-x pos-y color)\n\n"
@@ -506,7 +650,7 @@ static JanetReg shapes_cfuns[] = {
         "Draw a color-filled circle (Vector version)"
     },
     {"draw-circle-gradient", cfun_DrawCircleGradient, 
-        "(draw-circle-gradient center-x center-y radius color-1 color-2)\n\n"
+        "(draw-circle-gradient center radius color-1 color-2)\n\n"
         "Draw a gradient-filled circle"
     },
     {"draw-circle-lines", cfun_DrawCircleLines, 
@@ -561,8 +705,8 @@ static JanetReg shapes_cfuns[] = {
         "(draw-rectangle-rounded rec roundness segments color)\n\n"
         "Draw rectangle with rounded edges"
     },
-    {"draw-rectangle-rounded-lines", cfun_DrawRectangleRoundedLines, 
-        "(draw-rectangle-rounded-lines rec roundness segments line-thick color)\n\n"
+    {"draw-rectangle-rounded-lines-ex", cfun_DrawRectangleRoundedLinesEx, 
+        "(draw-rectangle-rounded-lines-ex rec roundness segments line-thick color)\n\n"
         "Draw rectangle with rounded edges outline"
     },
     {"draw-triangle", cfun_DrawTriangle, 
@@ -625,6 +769,58 @@ static JanetReg shapes_cfuns[] = {
     {"get-collision-rec", cfun_GetCollisionRec, 
         "(get-collision-rec rec1 rec2)\n\n"
         "Get collision rectangle for two rectangles collision"
+    },
+    {"get-shapes-texture", cfun_GetShapesTexture, 
+        "(get-shapes-texture)\n\n"
+        "Get texture that is used for shapes drawing"
+    },
+    {"get-shapes-texture-rectangle", cfun_GetShapesTextureRectangle, 
+        "(get-shapes-texture-rectangle)\n\n"
+        "Get texture source rectangle used for shapes drawing, as a tuple (x y width height)"
+    },
+    {"draw-line-dashed", cfun_DrawLineDashed, 
+        "(draw-line-dashed start-pos end-pos dash-size space-size color)\n\n"
+        "Draw a dashed line"
+    },
+    {"draw-triangle-gradient", cfun_DrawTriangleGradient, 
+        "(draw-triangle-gradient v1 v2 v3 c1 c2 c3)\n\n"
+        "Draw triangle with interpolated colors, counter-clockwise vertex/color order"
+    },
+    {"draw-triangle-lines-ex", cfun_DrawTriangleLinesEx, 
+        "(draw-triangle-lines-ex v1 v2 v3 thick color)\n\n"
+        "Draw triangle outline with line thickness, counter-clockwise vertex order"
+    },
+    {"draw-circle-sector-lines-ex", cfun_DrawCircleSectorLinesEx, 
+        "(draw-circle-sector-lines-ex center radius start-angle end-angle segments thick color)\n\n"
+        "Draw circle sector outline with thickness"
+    },
+    {"draw-circle-lines-ex", cfun_DrawCircleLinesEx, 
+        "(draw-circle-lines-ex center radius thick color)\n\n"
+        "Draw circle outline with line thickness"
+    },
+    {"draw-ellipse-v", cfun_DrawEllipseV, 
+        "(draw-ellipse-v center radius-h radius-v color)\n\n"
+        "Draw ellipse (Vector version)"
+    },
+    {"draw-ellipse-lines-v", cfun_DrawEllipseLinesV, 
+        "(draw-ellipse-lines-v center radius-h radius-v color)\n\n"
+        "Draw ellipse outline (Vector version)"
+    },
+    {"draw-ellipse-lines-ex", cfun_DrawEllipseLinesEx, 
+        "(draw-ellipse-lines-ex center radius-h radius-v thick color)\n\n"
+        "Draw ellipse outline with line thickness"
+    },
+    {"draw-ring-lines-ex", cfun_DrawRingLinesEx, 
+        "(draw-ring-lines-ex center inner-radius outer-radius start-angle end-angle segments thick color)\n\n"
+        "Draw ring outline with line thickness"
+    },
+    {"get-spline-point-bezier-quadratic", cfun_GetSplinePointBezierQuadratic, 
+        "(get-spline-point-bezier-quadratic p1 c2 p3 t)\n\n"
+        "Get (evaluate) spline point: Quadratic Bezier"
+    },
+    {"check-collision-circle-line", cfun_CheckCollisionCircleLine, 
+        "(check-collision-circle-line center radius p1 p2)\n\n"
+        "Check if circle collides with a line created between two points [p1] and [p2]"
     },
     {NULL, NULL, NULL}
 };
