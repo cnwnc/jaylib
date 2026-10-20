@@ -1166,6 +1166,85 @@ static Janet cfun_EndScissorMode(int32_t argc, Janet *argv) {
     return janet_wrap_nil();
 }
 
+static Janet cfun_IsWindowFullscreen(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    return janet_wrap_boolean(IsWindowFullscreen());
+}
+
+static Janet cfun_IsWindowHidden(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    return janet_wrap_boolean(IsWindowHidden());
+}
+
+static Janet cfun_IsWindowMaximized(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    return janet_wrap_boolean(IsWindowMaximized());
+}
+
+static Janet cfun_ToggleBorderlessWindowed(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    ToggleBorderlessWindowed();
+    return janet_wrap_nil();
+}
+
+static Janet cfun_MaximizeWindow(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    MaximizeWindow();
+    return janet_wrap_nil();
+}
+
+static Janet cfun_MinimizeWindow(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    MinimizeWindow();
+    return janet_wrap_nil();
+}
+
+static Janet cfun_RestoreWindow(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    RestoreWindow();
+    return janet_wrap_nil();
+}
+
+static Janet cfun_SetWindowMaxSize(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 2);
+    int width = janet_getinteger(argv, 0);
+    int height = janet_getinteger(argv, 1);
+    SetWindowMaxSize(width, height);
+    return janet_wrap_nil();
+}
+
+static Janet cfun_SetWindowFocused(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    SetWindowFocused();
+    return janet_wrap_nil();
+}
+
+static Janet cfun_GetCurrentMonitor(int32_t argc, Janet *argv) {
+    (void) argv;
+    janet_fixarity(argc, 0);
+    return janet_wrap_integer(GetCurrentMonitor());
+}
+
+static Janet cfun_GetMonitorPosition(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    int monitor = janet_getinteger(argv, 0);
+    return jaylib_wrap_vec2(GetMonitorPosition(monitor));
+}
+
+static Janet cfun_GetMonitorRefreshRate(int32_t argc, Janet *argv) {
+    janet_fixarity(argc, 1);
+    int monitor = janet_getinteger(argv, 0);
+    return janet_wrap_integer(GetMonitorRefreshRate(monitor));
+}
+
 static JanetReg core_cfuns[] = {
     {"init-window", cfun_InitWindow, 
         "(init-window width height title)\n\n" 
@@ -1227,6 +1306,42 @@ static JanetReg core_cfuns[] = {
         "(set-window-min-size width height)\n\n" 
         "Set window minimum dimensions"
     },
+    {"set-window-max-size", cfun_SetWindowMaxSize, 
+        "(set-window-max-size width height)\n\n" 
+        "Set window maximum dimensions"
+    },
+    {"maximize-window", cfun_MaximizeWindow, 
+        "(maximize-window)\n\n" 
+        "Set window state: maximized"
+    },
+    {"minimize-window", cfun_MinimizeWindow, 
+        "(minimize-window)\n\n" 
+        "Set window state: minimized"
+    },
+    {"restore-window", cfun_RestoreWindow, 
+        "(restore-window)\n\n" 
+        "Restore window from being minimized/maximized"
+    },
+    {"toggle-borderless-windowed", cfun_ToggleBorderlessWindowed, 
+        "(toggle-borderless-windowed)\n\n" 
+        "Toggle window state: borderless windowed"
+    },
+    {"set-window-focused", cfun_SetWindowFocused, 
+        "(set-window-focused)\n\n" 
+        "Set window focused"
+    },
+    {"window-fullscreen?", cfun_IsWindowFullscreen, 
+        "(window-fullscreen?)\n\n" 
+        "Check if window is currently fullscreen"
+    },
+    {"window-hidden?", cfun_IsWindowHidden, 
+        "(window-hidden?)\n\n" 
+        "Check if window is currently hidden"
+    },
+    {"window-maximized?", cfun_IsWindowMaximized, 
+        "(window-maximized?)\n\n" 
+        "Check if window is currently maximized"
+    },
     {"set-window-size", cfun_SetWindowSize, 
         "(set-window-size width height)\n\n" 
         "Set window dimensions"
@@ -1286,6 +1401,18 @@ static JanetReg core_cfuns[] = {
     {"get-monitor-name", cfun_GetMonitorName, 
         "(get-monitor-name monitor)\n\n" 
         "Get the human-readable, UTF-8 encoded name of the primary monitor"
+    },
+    {"get-current-monitor", cfun_GetCurrentMonitor, 
+        "(get-current-monitor)\n\n" 
+        "Get current monitor where window is placed"
+    },
+    {"get-monitor-position", cfun_GetMonitorPosition, 
+        "(get-monitor-position monitor)\n\n" 
+        "Get specified monitor position"
+    },
+    {"get-monitor-refresh-rate", cfun_GetMonitorRefreshRate, 
+        "(get-monitor-refresh-rate monitor)\n\n" 
+        "Get specified monitor refresh rate"
     },
     {"get-clipboard-text", cfun_GetClipboardText, 
         "(get-clipboard-text)\n\n" 
